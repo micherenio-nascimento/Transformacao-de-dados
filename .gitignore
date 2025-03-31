@@ -1,0 +1,17 @@
+# Arquivos de compilação
+target/
+*.class
+
+# Diretórios de saída
+output/
+
+# Arquivos temporários
+*.log
+*.tmp
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+
+# Maven
+pom.xml.versionsBackup
