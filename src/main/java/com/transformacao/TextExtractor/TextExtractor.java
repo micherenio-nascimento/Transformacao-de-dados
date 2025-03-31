@@ -27,7 +27,7 @@ public class TextExtractor {
 
     public List<Procedure> extractProcedures() {
         List<Procedure> procedures = new ArrayList<>();
-        String pattern = "^(.*?)\\\\s+(?:\\\\d{3}/\\\\d{4})?\\\\s*(\\\\d{2}/\\\\d{2}/\\\\d{4})?\\\\s*([A-Za-z]{2,3})?\\\\s*([A-Za-z]{2,3})?\\\\s*([A-Za-z]{2,3})?\\\\s*([A-Za-z]{2,3})?\\\\s*([A-Za-z]{2,3})?\\\\s*([A-Za-z]{2,3})?\\\\s*([A-Za-z]{2,3})?";
+        String pattern = "^(.+?)\\s+(AMB|OD|HCO|HSO|REF|PAC|DUT)(?:\\s+(AMB|OD|HCO|HSO|REF|PAC|DUT))*.*$";
         Pattern regex = Pattern.compile(pattern);
 
         String[] lines = text.split("\\n");
@@ -35,26 +35,37 @@ public class TextExtractor {
 
         for (String line : lines) {
             line = line.trim();
-            if (line.isEmpty() || line.contains("Legenda:") || line.contains("Rol de Procedimentos")) {
+            if (line.isEmpty() || line.contains("Legenda:") || line.contains("Rol de Procedimentos") ||
+                line.equals("PROCEDIMENTOS DIAGNÓSTICOS E") || line.equals("TERAPÊUTICOS")) {
                 continue;
             }
 
             Matcher matcher = regex.matcher(line);
             if (matcher.matches()) {
+                System.out.println("Linha correspondida: " + line);
                 if (currentProcedure != null) {
                     procedures.add(createProcedure(currentProcedure));
                 }
                 currentProcedure = new HashMap<>();
-                currentProcedure.put("name", matcher.group(1).trim());
-                currentProcedure.put("rn", matcher.group(2) != null ? matcher.group(2) : "");
-                currentProcedure.put("effective_date", matcher.group(3) != null ? matcher.group(3) : "");
-                currentProcedure.put("dental_coverage", matcher.group(4) != null ? matcher.group(4) : "");
-                currentProcedure.put("outpatient_coverage", matcher.group(5) != null ? matcher.group(5) : "");
-                currentProcedure.put("hospital_with_obstetrics", matcher.group(6) != null ? matcher.group(6) : "");
-                currentProcedure.put("hospital_without_obstetrics", matcher.group(7) != null ? matcher.group(7) : "");
-                currentProcedure.put("reference_plan", matcher.group(8) != null ? matcher.group(8) : "");
-                currentProcedure.put("high_complexity", matcher.group(9) != null ? matcher.group(9) : "");
-                currentProcedure.put("usage_guideline", "");
+                String name = matcher.group(1).trim();
+                currentProcedure.put("name", name);
+                currentProcedure.put("rn", "");
+                currentProcedure.put("effective_date", "");
+
+                String[] parts = line.split("\\s+");
+                for (String part : parts) {
+                    if (legendMap.containsKey(part)) {
+                        switch (part) {
+                            case "OD": currentProcedure.put("dental_coverage", "OD"); break;
+                            case "AMB": currentProcedure.put("outpatient_coverage", "AMB"); break;
+                            case "HCO": currentProcedure.put("hospital_with_obstetrics", "HCO"); break;
+                            case "HSO": currentProcedure.put("hospital_without_obstetrics", "HSO"); break;
+                            case "REF": currentProcedure.put("reference_plan", "REF"); break;
+                            case "PAC": currentProcedure.put("high_complexity", "PAC"); break;
+                            case "DUT": currentProcedure.put("usage_guideline", "DUT"); break;
+                        }
+                    }
+                }
                 currentProcedure.put("subgroup", "");
                 currentProcedure.put("group", "");
                 currentProcedure.put("chapter", "");
