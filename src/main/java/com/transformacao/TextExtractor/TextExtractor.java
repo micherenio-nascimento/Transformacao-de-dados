@@ -42,7 +42,6 @@ public class TextExtractor {
 
             Matcher matcher = regex.matcher(line);
             if (matcher.matches()) {
-                System.out.println("Linha correspondida: " + line);
                 if (currentProcedure != null) {
                     procedures.add(createProcedure(currentProcedure));
                 }
